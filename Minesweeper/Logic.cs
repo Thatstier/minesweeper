@@ -32,7 +32,6 @@ namespace Minesweeper
             return result;
         }
 
-
         static public void mainMenu()
         {
             Console.WriteLine("Welcome to MineSweeper!\n");
@@ -44,7 +43,7 @@ namespace Minesweeper
                 {
                     if (line.Contains("width:") == false && line.Contains("height:") == false)
                     {
-                        tilesList.Add(new Tile() { id = int.Parse(line.Split(';').ToList()[0]), number = int.Parse(line.Split(';').ToList()[1]), isOpen = bool.Parse(line.Split(';').ToList()[2]), isFlagged = bool.Parse(line.Split(';').ToList()[3]) });
+                        tilesList.Add(new Tile() { id = int.Parse(line.Split(';').ToList()[0]), number = int.Parse(line.Split(';').ToList()[1]), isOpen = bool.Parse(line.Split(';').ToList()[2]),  isFlagged = bool.Parse(line.Split(';').ToList()[3]) });
                         if (int.Parse(line.Split(';').ToList()[1]) == -1)
                         {
                             minesList.Add(int.Parse(line.Split(';').ToList()[0]));
@@ -82,13 +81,13 @@ namespace Minesweeper
             }
         }
 
-
         static public void onClickLeft(int clickedTile)
         {
             if (tilesList[clickedTile].number == -1)
             {
                 tilesList[clickedTile].isOpen = true;
                 fieldOutput();
+                File.Delete(dataFilePath);
                 Console.WriteLine("\nGameOver");
                 Console.WriteLine("\nEnter anything to restart: ");
                 Console.ReadLine();
@@ -113,6 +112,7 @@ namespace Minesweeper
 
                 fieldOutput();
                 checkWin();
+                saveField();
 
                 Console.WriteLine("\nOpen the next tile, enter number: ");
                 onClickLeft(int.Parse(Console.ReadLine()));
@@ -123,6 +123,7 @@ namespace Minesweeper
 
                 fieldOutput();
                 checkWin();
+                saveField();
 
                 Console.WriteLine("\nOpen the next tile, enter number: ");
                 onClickLeft(int.Parse(Console.ReadLine()));
@@ -141,6 +142,7 @@ namespace Minesweeper
                 {
                     tilesList[clickedTile].isFlagged = true;
                 }
+                saveField();
             }
         }
 
@@ -202,6 +204,7 @@ namespace Minesweeper
             }
             if (numberOfKnownMines == numberOfPotentialMines)
             {
+                File.Delete(dataFilePath);
                 Console.WriteLine("\nYou won!");
                 Console.WriteLine("\nEnter anything to restart: ");
                 Console.ReadLine();
@@ -354,6 +357,23 @@ namespace Minesweeper
             }
         }
 
+        static private void saveField()
+        {
+            using (StreamWriter sw = File.CreateText(dataFilePath))
+            {
+                sw.Close();
+            }
+            string[] dataFile = File.ReadAllLines(dataFilePath);
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(dataFilePath))
+            {
+                    file.WriteLine("width:" + width);
+                    file.WriteLine("height:" + height);
+                    foreach (Tile tile in tilesList)
+                    {
+                        file.WriteLine(ConvertToString(tile));
+                    }
+            }
+        }
 
         static private string ConvertToString(Tile tile)
         {
@@ -366,25 +386,6 @@ namespace Minesweeper
             str += ';';
             str += tile.isFlagged;
             return str;
-        }
-
-
-        static private void saveField()
-        {
-            using (StreamWriter sw = File.CreateText(dataFilePath))
-            {
-                sw.Close();
-            }
-            string[] dataFile = File.ReadAllLines(dataFilePath);
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(dataFilePath))
-            {
-                file.WriteLine("width:" + width);
-                file.WriteLine("height:" + height);
-                foreach (Tile tile in tilesList)
-                {
-                    file.WriteLine(ConvertToString(tile));
-                }
-            }
         }
     }
 }

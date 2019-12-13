@@ -9,4 +9,7 @@
     <Compile Remove="Startup.cs" />
     <Compile Remove="Region.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
 </Project>
