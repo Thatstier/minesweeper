@@ -10,6 +10,8 @@ namespace Minesweeper
         static private List<int> minesList = new List<int>();
         static private List<Tile> tilesList = new List<Tile>();
 
+        static private string dataFilePath = @"../../../Data/Data.txt";
+
         static private int width;
         static private int height;
 
@@ -28,6 +30,56 @@ namespace Minesweeper
                 }
             }
             return result;
+        }
+
+
+        static public void mainMenu()
+        {
+            Console.WriteLine("Welcome to MineSweeper!\n");
+            if (File.Exists(dataFilePath))
+            {
+                string[] dataFile = File.ReadAllLines(dataFilePath);
+                Console.WriteLine("Your game is loaded, opening...");
+                foreach (var line in dataFile)
+                {
+                    if (line.Contains("width:") == false && line.Contains("height:") == false)
+                    {
+                        tilesList.Add(new Tile() { id = int.Parse(line.Split(';').ToList()[0]), number = int.Parse(line.Split(';').ToList()[1]), isOpen = bool.Parse(line.Split(';').ToList()[2]), isFlagged = bool.Parse(line.Split(';').ToList()[3]) });
+                        if (int.Parse(line.Split(';').ToList()[1]) == -1)
+                        {
+                            minesList.Add(int.Parse(line.Split(';').ToList()[0]));
+                        }
+                    }
+                    else
+                    {
+                        if (line.Contains("width"))
+                        {
+                            width = int.Parse(line.Remove(0, 6));
+                        }
+                        else
+                        {
+                            height = int.Parse(line.Remove(0, 7));
+                        }
+                    }
+                }
+                showFullField();
+
+                Console.WriteLine("\nOpen the next tile, enter number: ");
+                onClickLeft(int.Parse(Console.ReadLine()));
+            }
+            else
+            {
+                Console.WriteLine("Enter field width: ");
+                int widthInput = int.Parse(Console.ReadLine());
+                Console.WriteLine("Enter field height: ");
+                int heightInput = int.Parse(Console.ReadLine());
+                Console.WriteLine("Enter number of mines: ");
+                int mines = int.Parse(Console.ReadLine());
+                Console.WriteLine("Open the first tile, enter number: ");
+                int startingTile = int.Parse(Console.ReadLine());
+
+                createField(widthInput, heightInput, mines, startingTile);
+            }
         }
 
 
@@ -298,6 +350,39 @@ namespace Minesweeper
                 {
                     Console.WriteLine();
                     count = 0;
+                }
+            }
+        }
+
+
+        static private string ConvertToString(Tile tile)
+        {
+            string str = "";
+            str += tile.id;
+            str += ';';
+            str += tile.number;
+            str += ';';
+            str += tile.isOpen;
+            str += ';';
+            str += tile.isFlagged;
+            return str;
+        }
+
+
+        static private void saveField()
+        {
+            using (StreamWriter sw = File.CreateText(dataFilePath))
+            {
+                sw.Close();
+            }
+            string[] dataFile = File.ReadAllLines(dataFilePath);
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(dataFilePath))
+            {
+                file.WriteLine("width:" + width);
+                file.WriteLine("height:" + height);
+                foreach (Tile tile in tilesList)
+                {
+                    file.WriteLine(ConvertToString(tile));
                 }
             }
         }
