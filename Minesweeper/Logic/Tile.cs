@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Minesweeper
+namespace MineSweeper
 {
     public class Tile
     {
