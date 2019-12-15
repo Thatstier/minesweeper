@@ -26,42 +26,7 @@ namespace MineSweeper
             InitializeComponent();
             Logic.mainMenu();
 
-            if (File.Exists(Logic.dataFilePath))
-            {
-                foreach (Button button in ButtonsGrid.Children)
-                {
-                    Tile tile = Logic.tilesList[ButtonsGrid.Children.IndexOf(button)];
-                    if (tile.isOpen == true)
-                    {
-                        if (tile.isFlagged)
-                        {
-                            button.Content = '?';
-                        }
-                        else
-                        {
-                            if (tile.number != -1)
-                            {
-                                button.Content = tile.number;
-                            }
-                            else
-                            {
-                                button.Content = '*';
-                            }
-                        }
-                    }
-                    else
-                    {
-                        button.Content = "";
-                    }
-                }
-            }
-            else
-            {
-                foreach (Button button in ButtonsGrid.Children)
-                {
-                    button.Content = "";
-                }
-            }
+            updateTextures();
 
 
         }
@@ -71,73 +36,57 @@ namespace MineSweeper
 
             Logic.onClickLeft(int.Parse(((Button)sender).Name.Remove(0, 1)));
 
-            if (Logic.tilesList.Count == 0)
-            {
-                foreach (Button button in ButtonsGrid.Children)
-                {
-                    button.Content = "";
-                }
-            }
-            else
-            {
-
-                foreach (Button button in ButtonsGrid.Children)
-                {
-                    Tile tile = Logic.tilesList[ButtonsGrid.Children.IndexOf(button)];
-                    if (tile.isOpen == true)
-                    {
-                        if (tile.isFlagged)
-                        {
-                            button.Content = '?';
-                        }
-                        else
-                        {
-                            if (tile.number != -1)
-                            {
-                                button.Content = tile.number;
-                            }
-                            else
-                            {
-                                button.Content = '*';
-                            }
-                        }
-                    }
-                    else
-                    {
-                        button.Content = "";
-                    }
-                }
-            }
+            updateTextures();
         }
 
         private void onRightClick(object sender, MouseButtonEventArgs e)
         {
             Logic.onClickRight(int.Parse(((Button)sender).Name.Remove(0, 1)));
 
-            foreach (Button button in ButtonsGrid.Children)
+            updateTextures();
+        }
+
+
+        private void setTexture(Button button, string textureName)
+        {
+            button.Content = new Image() { Source = new BitmapImage(new Uri(System.IO.Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\", @"Textures\", textureName + ".png"))) };
+        }
+        private void updateTextures()
+        {
+            if (File.Exists(Logic.dataFilePath))
             {
-                Tile tile = Logic.tilesList[ButtonsGrid.Children.IndexOf(button)];
-                if (tile.isOpen == true)
+                foreach (Button button in ButtonsGrid.Children)
                 {
-                    if (tile.isFlagged)
-                    {
-                        button.Content = '?';
-                    }
-                    else
+                    Tile tile = Logic.tilesList[ButtonsGrid.Children.IndexOf(button)];
+                    if (tile.isOpen == true)
                     {
                         if (tile.number != -1)
                         {
-                            button.Content = tile.number;
+                            setTexture(button, tile.number.ToString());
                         }
                         else
                         {
                             button.Content = '*';
                         }
                     }
+                    else
+                    {
+                        if (tile.isFlagged)
+                        {
+                            setTexture(button, "flag");
+                        }
+                        else
+                        {
+                            setTexture(button, "tile");
+                        }
+                    }
                 }
-                else
+            }
+            else
+            {
+                foreach (Button button in ButtonsGrid.Children)
                 {
-                    button.Content = "";
+                    setTexture(button, "tile");
                 }
             }
         }
