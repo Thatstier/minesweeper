@@ -15,6 +15,7 @@ namespace MineSweeper
         static private int width;
         static private int height;
 
+        static public bool inGame = false;
 
         public static List<int> generateRandom(int count, int min, int max, int ignoreNum)
         {
@@ -38,7 +39,6 @@ namespace MineSweeper
             if (File.Exists(dataFilePath))
             {
                 string[] dataFile = File.ReadAllLines(dataFilePath);
-                Console.WriteLine("Your game is loaded, opening...");
                 foreach (var line in dataFile)
                 {
                     if (line.Contains("width:") == false && line.Contains("height:") == false)
@@ -61,7 +61,6 @@ namespace MineSweeper
                         }
                     }
                 }
-                showFullField();
             }
             else
             {
@@ -72,19 +71,26 @@ namespace MineSweeper
         {
             if (File.Exists(dataFilePath) == false)
             {
-                createField(10, 10, 15, clickedTile);
+                if (inGame == false)
+                {
+                    minesList.Clear();
+                    tilesList.Clear();
+                    createField(10, 10, 20, clickedTile);
+                    return;
+                }
+                else
+                {
+                    inGame = false;
+                    return;
+                }
             }
+
             if (tilesList[clickedTile].isFlagged == false)
             {
                 if (tilesList[clickedTile].number == -1)
                 {
                     tilesList[clickedTile].isOpen = true;
-                    fieldOutput();
                     File.Delete(dataFilePath);
-                    Console.WriteLine("\nGameOver");
-                    Console.WriteLine("\nEnter anything to restart: ");
-                    Console.ReadLine();
-                    restart(minesList.Count());
                     return;
                 }
                 if (tilesList[clickedTile].number == 0)
@@ -103,23 +109,80 @@ namespace MineSweeper
                         tilesList[intac].isOpen = true;
                     }
 
-                    fieldOutput();
                     checkWin();
-                    saveField();
-
-                    Console.WriteLine("\nOpen the next tile, enter number: ");
-                    //onClickLeft(int.Parse(Console.ReadLine()));
                 }
                 if (tilesList[clickedTile].number != 0 && tilesList[clickedTile].number != -1)
                 {
-                    tilesList[clickedTile].isOpen = true;
+                    if (tilesList[clickedTile].isOpen == true && tilesList[clickedTile].number != 0)
+                    {
+                        List<int> surroundList = checkSurround(clickedTile);
+                        int surroundingFlags = 0;
+                        foreach (int surroundInt in surroundList)
+                        {
+                            if (tilesList[surroundInt].isFlagged == true)
+                            {
+                                surroundingFlags++;
+                            }
+                        }
 
-                    fieldOutput();
+                        if (tilesList[clickedTile].number == surroundingFlags)
+                        {
+                            bool hasLost = false;
+                            foreach (int surroundInt in surroundList)
+                            {
+                                if (tilesList[surroundInt].isFlagged == false && tilesList[surroundInt].isOpen == false)
+                                {
+                                    if (tilesList[surroundInt].number == -1)
+                                    {
+                                        hasLost = true;
+                                    }
+                                    else
+                                    {
+                                        if (tilesList[surroundInt].number == 0)
+                                        {
+                                            List<int> outerList = new List<int>();
+                                            List<int> innerList = new List<int>();
+                                            innerList.Add(clickedTile);
+                                            openRegion(clickedTile, outerList, innerList);
+
+                                            foreach (var intac in outerList)
+                                            {
+                                                if (tilesList[intac].isFlagged == false)
+                                                {
+                                                    tilesList[intac].isOpen = true;
+
+                                                }
+                                            }
+                                            foreach (var intac in innerList)
+                                            {
+                                                if (tilesList[intac].isFlagged == false)
+                                                {
+                                                    tilesList[intac].isOpen = true;
+
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            tilesList[surroundInt].isOpen = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (hasLost == true)
+                            {
+                                File.Delete(dataFilePath);
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        tilesList[clickedTile].isOpen = true;
+                    }
+
                     checkWin();
-                    saveField();
-
-                    Console.WriteLine("\nOpen the next tile, enter number: ");
-                    //onClickLeft(int.Parse(Console.ReadLine()));
                 }
             }
         }
@@ -140,69 +203,31 @@ namespace MineSweeper
             }
         }
 
-        static void restart(int mines)
-        {
-
-            minesList.Clear();
-            tilesList.Clear();
-            Console.WriteLine("\nStarting new game");
-            Console.WriteLine("Open the first tile, enter number: ");
-        }
-
-        static void fieldOutput()
-        {
-            Console.WriteLine("");
-
-            int count = 0;
-            foreach (Tile tile in tilesList)
-            {
-                count++;
-                if (tile.isOpen == false)
-                {
-                    Console.Write("- ");
-                }
-                else
-                {
-                    if (tile.number != -1)
-                    {
-                        Console.Write("{0} ", tile.number);
-                    }
-                    else
-                    {
-                        Console.Write("* ");
-                    }
-                }
-                if (count % width == 0)
-                {
-                    Console.WriteLine();
-                    count = 0;
-                }
-            }
-        }
-
         static private void checkWin()
         {
-            int numberOfKnownMines = 0;
+            int numberOfOpenedTiles = 0;
             int numberOfPotentialMines = 0;
             foreach (Tile tile in tilesList)
             {
-                if (tile.isOpen == false)
+                if (tile.isOpen == false && minesList.Contains(tile.id))
                 {
                     numberOfPotentialMines++;
-                    if (minesList.Contains(tile.id))
-                    {
-                        numberOfKnownMines++;
-                    }
                 }
+
+                if (tile.isOpen == true)
+                {
+                    numberOfOpenedTiles++;
+                }
+                
             }
-            if (numberOfKnownMines == numberOfPotentialMines)
+
+            if (minesList.Count() == numberOfPotentialMines && width*height - minesList.Count() == numberOfOpenedTiles)
             {
                 File.Delete(dataFilePath);
-                Console.WriteLine("\nYou won!");
-                Console.WriteLine("\nEnter anything to restart: ");
-                Console.ReadLine();
-                restart(minesList.Count());
+                return;
             }
+
+            saveField();
         }
 
         static void openRegion(int startingTile, List<int> outerList, List<int> innerList)
@@ -285,6 +310,7 @@ namespace MineSweeper
 
         static public void createField(int inputWidth, int inputHeight, int mines, int ignoreTile)
         {
+            inGame = true;
             width = inputWidth;
             height = inputHeight;
             minesList = generateRandom(mines, 0, width * height, ignoreTile);
@@ -322,32 +348,8 @@ namespace MineSweeper
             }
 
             saveField();
-            Console.WriteLine();
 
-            showFullField();
             onClickLeft(ignoreTile);
-        }
-
-        static void showFullField()
-        {
-            int count = 0;
-            foreach(var i in tilesList)
-            {
-                count++;
-                if (i.number != -1)
-                {
-                    Console.Write("{0} ", i.number);
-                }
-                else
-                {
-                    Console.Write("* ");
-                }
-                if (count % width == 0)
-                {
-                    Console.WriteLine();
-                    count = 0;
-                }
-            }
         }
 
         static private void saveField()

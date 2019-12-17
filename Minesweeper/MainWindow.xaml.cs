@@ -33,7 +33,6 @@ namespace MineSweeper
 
         private void onLeftClick(object sender, RoutedEventArgs e)
         {
-
             Logic.onClickLeft(int.Parse(((Button)sender).Name.Remove(0, 1)));
 
             updateTextures();
@@ -53,7 +52,7 @@ namespace MineSweeper
         }
         private void updateTextures()
         {
-            if (File.Exists(Logic.dataFilePath))
+            if (File.Exists(Logic.dataFilePath) || Logic.inGame == true)
             {
                 foreach (Button button in ButtonsGrid.Children)
                 {
@@ -66,7 +65,7 @@ namespace MineSweeper
                         }
                         else
                         {
-                            button.Content = '*';
+                            setTexture(button, "mine");
                         }
                     }
                     else
@@ -78,6 +77,18 @@ namespace MineSweeper
                         else
                         {
                             setTexture(button, "tile");
+                        }
+
+                        if (File.Exists(Logic.dataFilePath) == false && Logic.inGame == true)
+                        {
+                            if (tile.number != -1 && tile.isFlagged == true)
+                            {
+                                setTexture(button, "mine_false");
+                            }
+                            if (tile.number == -1 && tile.isFlagged == false)
+                            {
+                                setTexture(button, "mine");
+                            }
                         }
                     }
                 }
