@@ -1,0 +1,20 @@
+﻿<Page x:Class="MineSweeper.EnterPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:MineSweeper"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="350"
+      Background="White"
+      Title="EnterPage">
+
+    <Grid>
+        <StackPanel Grid.Column="1">
+            <Label FontSize="30.0" FontWeight="ExtraBold" Content="MineSweeper" HorizontalContentAlignment="Center" Width="250" Margin="0,20,0,0"/>
+            <Button Content="Continue" Height="50" Margin="70,30,70,0" Cursor="Hand" Click="onClickContinue"/>
+            <Button Content="New Game" Height="50" Margin="70,30,70,0" Cursor="Hand" Click="onClickNew" />
+            <Button Content="Exit" Height="50" Margin="100,100,100,0" Cursor="Hand" Click="onClickExit" />
+        </StackPanel>
+    </Grid>
+</Page>

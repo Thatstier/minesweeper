@@ -14,8 +14,11 @@ namespace MineSweeper
 
         static private int width;
         static private int height;
+        static private int difficulty;
+        static public int mines;
 
         static public bool inGame = false;
+        static public int gameState = 1;
 
         public static List<int> generateRandom(int count, int min, int max, int ignoreNum)
         {
@@ -33,15 +36,37 @@ namespace MineSweeper
             return result;
         }
 
-        static public void mainMenu()
+        static public void mainMenu(int df)
         {
-            Console.WriteLine("Welcome to MineSweeper!\n");
+            difficulty = df;
+
+            switch (difficulty)
+            {
+                case 1:
+                    width = 8;
+                    height = 8;
+                    mines = 10;
+                    break;
+                case 2:
+                    width = 16;
+                    height = 16;
+                    mines = 40;
+                    break;
+                case 3:
+                    width = 24;
+                    height = 24;
+                    mines = 99;
+                    break;
+                default:
+                    break;
+            }
+
             if (File.Exists(dataFilePath))
             {
                 string[] dataFile = File.ReadAllLines(dataFilePath);
                 foreach (var line in dataFile)
                 {
-                    if (line.Contains("width:") == false && line.Contains("height:") == false)
+                    if (line.Contains("width:") == false && line.Contains("height:") == false && line.Contains("difficulty:") == false)
                     {
                         tilesList.Add(new Tile() { id = int.Parse(line.Split(';').ToList()[0]), number = int.Parse(line.Split(';').ToList()[1]), isOpen = bool.Parse(line.Split(';').ToList()[2]),  isFlagged = bool.Parse(line.Split(';').ToList()[3]) });
                         if (int.Parse(line.Split(';').ToList()[1]) == -1)
@@ -51,19 +76,21 @@ namespace MineSweeper
                     }
                     else
                     {
+
+                        if (line.Contains("difficulty"))
+                        {
+                            difficulty = int.Parse(line.Remove(0, 11));
+                        }
                         if (line.Contains("width"))
                         {
                             width = int.Parse(line.Remove(0, 6));
                         }
-                        else
+                        if (line.Contains("height"))
                         {
                             height = int.Parse(line.Remove(0, 7));
                         }
                     }
                 }
-            }
-            else
-            {
             }
         }
 
@@ -71,115 +98,77 @@ namespace MineSweeper
         {
             if (File.Exists(dataFilePath) == false)
             {
-                if (inGame == false)
-                {
-                    minesList.Clear();
-                    tilesList.Clear();
-                    createField(10, 10, 20, clickedTile);
-                    return;
-                }
-                else
-                {
-                    inGame = false;
-                    return;
-                }
+                minesList.Clear();
+                tilesList.Clear();
+                createField(width, height, mines, clickedTile);
+                return;
             }
-
-            if (tilesList[clickedTile].isFlagged == false)
+            else
             {
-                if (tilesList[clickedTile].number == -1)
+                if (tilesList[clickedTile].isFlagged == false)
                 {
-                    tilesList[clickedTile].isOpen = true;
-                    File.Delete(dataFilePath);
-                    return;
-                }
-                if (tilesList[clickedTile].number == 0)
-                {
-                    List<int> outerList = new List<int>();
-                    List<int> innerList = new List<int>();
-                    innerList.Add(clickedTile);
-                    openRegion(clickedTile, outerList, innerList);
-
-                    foreach (var intac in outerList)
+                    if (tilesList[clickedTile].number == -1 && tilesList[clickedTile].isOpen == false)
                     {
-                        tilesList[intac].isOpen = true;
+                        gameState = 3;
+                        tilesList[clickedTile].isOpen = true;
+                        File.Delete(dataFilePath);
+                        return;
                     }
-                    foreach (var intac in innerList)
+                    if (tilesList[clickedTile].number == 0 && tilesList[clickedTile].isOpen == false)
                     {
-                        tilesList[intac].isOpen = true;
+                        showOpenedRegion(clickedTile);
                     }
 
-                    checkWin();
-                }
-                if (tilesList[clickedTile].number != 0 && tilesList[clickedTile].number != -1)
-                {
-                    if (tilesList[clickedTile].isOpen == true && tilesList[clickedTile].number != 0)
+                    if (tilesList[clickedTile].number != 0 && tilesList[clickedTile].number != -1)
                     {
-                        List<int> surroundList = checkSurround(clickedTile);
-                        int surroundingFlags = 0;
-                        foreach (int surroundInt in surroundList)
+                        if (tilesList[clickedTile].isOpen == true && tilesList[clickedTile].number != 0)
                         {
-                            if (tilesList[surroundInt].isFlagged == true)
-                            {
-                                surroundingFlags++;
-                            }
-                        }
-
-                        if (tilesList[clickedTile].number == surroundingFlags)
-                        {
-                            bool hasLost = false;
+                            List<int> surroundList = checkSurround(clickedTile);
+                            int surroundingFlags = 0;
                             foreach (int surroundInt in surroundList)
                             {
-                                if (tilesList[surroundInt].isFlagged == false && tilesList[surroundInt].isOpen == false)
+                                if (tilesList[surroundInt].isFlagged == true)
                                 {
-                                    if (tilesList[surroundInt].number == -1)
+                                    surroundingFlags++;
+                                }
+                            }
+
+                            if (tilesList[clickedTile].number == surroundingFlags)
+                            {
+                                foreach (int surroundInt in surroundList)
+                                {
+                                    if (tilesList[surroundInt].isFlagged == false && tilesList[surroundInt].isOpen == false)
                                     {
-                                        hasLost = true;
-                                    }
-                                    else
-                                    {
-                                        if (tilesList[surroundInt].number == 0)
+                                        if (tilesList[surroundInt].number == -1)
                                         {
-                                            List<int> outerList = new List<int>();
-                                            List<int> innerList = new List<int>();
-                                            innerList.Add(clickedTile);
-                                            openRegion(clickedTile, outerList, innerList);
+                                            gameState = 3;
+                                            tilesList[surroundInt].isOpen = true;
+                                            File.Delete(dataFilePath);
+                                            return;
+                                        }
+                                    }
+                                }
 
-                                            foreach (var intac in outerList)
-                                            {
-                                                if (tilesList[intac].isFlagged == false)
-                                                {
-                                                    tilesList[intac].isOpen = true;
-
-                                                }
-                                            }
-                                            foreach (var intac in innerList)
-                                            {
-                                                if (tilesList[intac].isFlagged == false)
-                                                {
-                                                    tilesList[intac].isOpen = true;
-
-                                                }
-                                            }
+                                foreach (int confirmedInt in surroundList)
+                                {
+                                    if (tilesList[confirmedInt].isFlagged == false && tilesList[confirmedInt].isOpen == false)
+                                    {
+                                        if (tilesList[confirmedInt].number == 0)
+                                        {
+                                            showOpenedRegion(clickedTile);
                                         }
                                         else
                                         {
-                                            tilesList[surroundInt].isOpen = true;
+                                            tilesList[confirmedInt].isOpen = true;
                                         }
                                     }
                                 }
                             }
-
-                            if (hasLost == true)
-                            {
-                                File.Delete(dataFilePath);
-                                return;
-                            }
                         }
-                    }
-                    else
-                    {
-                        tilesList[clickedTile].isOpen = true;
+                        else
+                        {
+                            tilesList[clickedTile].isOpen = true;
+                        }
                     }
 
                     checkWin();
@@ -189,7 +178,7 @@ namespace MineSweeper
 
         static public void onClickRight(int clickedTile)
         {
-            if (tilesList[clickedTile].isOpen == false)
+            if (File.Exists(dataFilePath) == true && tilesList[clickedTile].isOpen == false)
             {
                 if (tilesList[clickedTile].isFlagged == true)
                 {
@@ -199,9 +188,21 @@ namespace MineSweeper
                 {
                     tilesList[clickedTile].isFlagged = true;
                 }
+
                 saveField();
+                checkWin();
             }
         }
+
+        static public void restart()
+        {
+            gameState = 1;
+            inGame = false;
+            minesList.Clear();
+            tilesList.Clear();
+            File.Delete(dataFilePath);
+        }
+
 
         static private void checkWin()
         {
@@ -209,7 +210,7 @@ namespace MineSweeper
             int numberOfPotentialMines = 0;
             foreach (Tile tile in tilesList)
             {
-                if (tile.isOpen == false && minesList.Contains(tile.id))
+                if (tile.isOpen == false && tile.isFlagged == true && minesList.Contains(tile.id))
                 {
                     numberOfPotentialMines++;
                 }
@@ -221,13 +222,40 @@ namespace MineSweeper
                 
             }
 
-            if (minesList.Count() == numberOfPotentialMines && width*height - minesList.Count() == numberOfOpenedTiles)
+            if (mines == numberOfPotentialMines && width*height - mines == numberOfOpenedTiles)
             {
+                //victory
+                gameState = 2;
                 File.Delete(dataFilePath);
                 return;
             }
 
             saveField();
+        }
+
+        static void showOpenedRegion(int clickedTile)
+        {
+            List<int> outerList = new List<int>();
+            List<int> innerList = new List<int>();
+            innerList.Add(clickedTile);
+            openRegion(clickedTile, outerList, innerList);
+
+            foreach (var intac in outerList)
+            {
+                if (tilesList[intac].isFlagged == false)
+                {
+                    tilesList[intac].isOpen = true;
+
+                }
+            }
+            foreach (var intac in innerList)
+            {
+                if (tilesList[intac].isFlagged == false)
+                {
+                    tilesList[intac].isOpen = true;
+
+                }
+            }
         }
 
         static void openRegion(int startingTile, List<int> outerList, List<int> innerList)
@@ -310,6 +338,7 @@ namespace MineSweeper
 
         static public void createField(int inputWidth, int inputHeight, int mines, int ignoreTile)
         {
+            gameState = 1;
             inGame = true;
             width = inputWidth;
             height = inputHeight;
@@ -361,12 +390,13 @@ namespace MineSweeper
             string[] dataFile = File.ReadAllLines(dataFilePath);
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(dataFilePath))
             {
-                    file.WriteLine("width:" + width);
-                    file.WriteLine("height:" + height);
-                    foreach (Tile tile in tilesList)
-                    {
-                        file.WriteLine(ConvertToString(tile));
-                    }
+                file.WriteLine("difficulty:" + difficulty);
+                file.WriteLine("width:" + width);
+                file.WriteLine("height:" + height);
+                foreach (Tile tile in tilesList)
+                {
+                    file.WriteLine(ConvertToString(tile));
+                }
             }
         }
 
