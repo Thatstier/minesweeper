@@ -7,8 +7,8 @@ namespace MineSweeper
 {
     public class Logic
     {
-        static private List<int> minesList = new List<int>();
         static public List<Tile> tilesList = new List<Tile>();
+        static private List<TileMine> minesList = new List<TileMine>();
 
         static public string dataFilePath = @"../../../Data/Data.txt";
 
@@ -20,17 +20,17 @@ namespace MineSweeper
         static public bool inGame = false;
         static public int gameState = 1;
 
-        public static List<int> generateRandom(int count, int min, int max, int ignoreNum)
+        public static List<TileMine> generateRandom(int count, int min, int max, int ignoreNum)
         {
             Random r = new Random();
 
-            List<int> result = new List<int>();
+            List<TileMine> result = new List<TileMine>();
             while (result.Count() < count)
             {
                 int x = r.Next(min, max);
-                if (x != ignoreNum && result.Contains(x) == false)
+                if (x != ignoreNum && findMine(result, x) == false)
                 {
-                    result.Add(x);
+                    result.Add(new TileMine() { id = x });
                 }
             }
             return result;
@@ -71,7 +71,7 @@ namespace MineSweeper
                         tilesList.Add(new Tile() { id = int.Parse(line.Split(';').ToList()[0]), number = int.Parse(line.Split(';').ToList()[1]), isOpen = bool.Parse(line.Split(';').ToList()[2]),  isFlagged = bool.Parse(line.Split(';').ToList()[3]) });
                         if (int.Parse(line.Split(';').ToList()[1]) == -1)
                         {
-                            minesList.Add(int.Parse(line.Split(';').ToList()[0]));
+                            minesList.Add(new TileMine() { id = int.Parse(line.Split(';').ToList()[0]) });
                         }
                     }
                     else
@@ -210,7 +210,7 @@ namespace MineSweeper
             int numberOfPotentialMines = 0;
             foreach (Tile tile in tilesList)
             {
-                if (tile.isOpen == false && tile.isFlagged == true && minesList.Contains(tile.id))
+                if (tile.isOpen == false && tile.isFlagged == true && findMine(minesList, tile.id) == true)
                 {
                     numberOfPotentialMines++;
                 }
@@ -345,7 +345,7 @@ namespace MineSweeper
             minesList = generateRandom(mines, 0, width * height, ignoreTile);
             for (int i = 0; i < width * height; i++)
             {
-                if (minesList.Contains(i))
+                if (findMine(minesList, i) == true)
                 {
                     tilesList.Add(new Tile() { id = i, isOpen = false, number = -1, isFlagged = false });
                 }
@@ -376,9 +376,22 @@ namespace MineSweeper
                 }
             }
 
+
             saveField();
 
             onClickLeft(ignoreTile);
+        }
+
+        static private bool findMine(List<TileMine> list, int tileId)
+        {
+            foreach(TileMine tileMine in list)
+            {
+                if (tileMine.id == tileId)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         static private void saveField()
