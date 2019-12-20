@@ -4,8 +4,10 @@ using System.Text;
 
 namespace MineSweeper
 {
-    public class TileInterface
+    public interface ITileInterface
     {
         public int id { get; set; }
+
+        public int number { get; set; }
     }
 }
